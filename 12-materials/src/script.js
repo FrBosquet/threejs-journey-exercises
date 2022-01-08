@@ -19,10 +19,11 @@ const scene = new THREE.Scene()
 const loadingManager = new THREE.LoadingManager()
 loadingManager.onStart = () => console.log('start')
 loadingManager.onProgress = () => console.log('progress')
-loadingManager.onError = e => console.log('error', e)
+loadingManager.onError = (e) => console.log('error', e)
 loadingManager.onLoad = () => console.log('load')
 
 const textureLoader = new THREE.TextureLoader(loadingManager)
+const cubeTextureLoader = new THREE.CubeTextureLoader(loadingManager)
 const textures = {
   door: {
     alpha: textureLoader.load('/textures/door/alpha.jpg'),
@@ -34,38 +35,38 @@ const textures = {
     roughness: textureLoader.load('/textures/door/roughness.jpg'),
   },
   environmentMaps: {
-    0: {
-      nx: textureLoader.load('/textures/environmentMaps/0/nx.jpg'),
-      ny: textureLoader.load('/textures/environmentMaps/0/ny.jpg'),
-      nz: textureLoader.load('/textures/environmentMaps/0/nz.jpg'),
-      px: textureLoader.load('/textures/environmentMaps/0/px.jpg'),
-      py: textureLoader.load('/textures/environmentMaps/0/py.jpg'),
-      pz: textureLoader.load('/textures/environmentMaps/0/pz.jpg'),
-    },
-    1: {
-      nx: textureLoader.load('/textures/environmentMaps/1/nx.jpg'),
-      ny: textureLoader.load('/textures/environmentMaps/1/ny.jpg'),
-      nz: textureLoader.load('/textures/environmentMaps/1/nz.jpg'),
-      px: textureLoader.load('/textures/environmentMaps/1/px.jpg'),
-      py: textureLoader.load('/textures/environmentMaps/1/py.jpg'),
-      pz: textureLoader.load('/textures/environmentMaps/1/pz.jpg'),
-    },
-    2: {
-      nx: textureLoader.load('/textures/environmentMaps/2/nx.jpg'),
-      ny: textureLoader.load('/textures/environmentMaps/2/ny.jpg'),
-      nz: textureLoader.load('/textures/environmentMaps/2/nz.jpg'),
-      px: textureLoader.load('/textures/environmentMaps/2/px.jpg'),
-      py: textureLoader.load('/textures/environmentMaps/2/py.jpg'),
-      pz: textureLoader.load('/textures/environmentMaps/2/pz.jpg'),
-    },
-    3: {
-      nx: textureLoader.load('/textures/environmentMaps/3/nx.jpg'),
-      ny: textureLoader.load('/textures/environmentMaps/3/ny.jpg'),
-      nz: textureLoader.load('/textures/environmentMaps/3/nz.jpg'),
-      px: textureLoader.load('/textures/environmentMaps/3/px.jpg'),
-      py: textureLoader.load('/textures/environmentMaps/3/py.jpg'),
-      pz: textureLoader.load('/textures/environmentMaps/3/pz.jpg'),
-    },
+    0: cubeTextureLoader.load([
+      '/textures/environmentMaps/0/px.jpg',
+      '/textures/environmentMaps/0/nx.jpg',
+      '/textures/environmentMaps/0/py.jpg',
+      '/textures/environmentMaps/0/ny.jpg',
+      '/textures/environmentMaps/0/pz.jpg',
+      '/textures/environmentMaps/0/nz.jpg',
+    ]),
+    1: cubeTextureLoader.load([
+      '/textures/environmentMaps/1/px.jpg',
+      '/textures/environmentMaps/1/nx.jpg',
+      '/textures/environmentMaps/1/py.jpg',
+      '/textures/environmentMaps/1/ny.jpg',
+      '/textures/environmentMaps/1/pz.jpg',
+      '/textures/environmentMaps/1/nz.jpg',
+    ]),
+    2: cubeTextureLoader.load([
+      '/textures/environmentMaps/2/px.jpg',
+      '/textures/environmentMaps/2/nx.jpg',
+      '/textures/environmentMaps/2/py.jpg',
+      '/textures/environmentMaps/2/ny.jpg',
+      '/textures/environmentMaps/2/pz.jpg',
+      '/textures/environmentMaps/2/nz.jpg',
+    ]),
+    3: cubeTextureLoader.load([
+      '/textures/environmentMaps/3/px.jpg',
+      '/textures/environmentMaps/3/nx.jpg',
+      '/textures/environmentMaps/3/py.jpg',
+      '/textures/environmentMaps/3/ny.jpg',
+      '/textures/environmentMaps/3/pz.jpg',
+      '/textures/environmentMaps/3/nz.jpg',
+    ]),
   },
   gradients: {
     3: textureLoader.load('/textures/gradients/3.jpg'),
@@ -96,7 +97,6 @@ const material = new THREE.MeshStandardMaterial()
 // const material = new THREE.MeshNormalMaterial()
 // const material = new THREE.MeshBasicMaterial({})
 
-// material.map = textures.door.color
 // material.color.set(0x00ff00)
 // material.wireframe = true
 // material.opacity = 0.5
@@ -111,14 +111,42 @@ const material = new THREE.MeshStandardMaterial()
 // textures.gradients['5'].minFilter = THREE.NearestFilter
 // textures.gradients['5'].magFilter = THREE.NearestFilter
 
+material.map = textures.door.color
+material.roughness = 0.7
+material.metalness = 1
+material.envMap = textures.environmentMaps[1]
+material.normalMap = textures.door.normal
+material.metalnessMap = textures.door.metalness
+material.roughnessMap = textures.door.roughness
+material.aoMap = textures.door.ambientOcclusion
+material.displacementMap = textures.door.height
+material.displacementScale = 0.02
+material.normalScale.set(2, 2)
+
+// gui.add(material, 'displacementScale', 0, 1, 0.01)
+// gui.add(material, 'aoMapIntensity', 0, 10, 0.5)
 gui.add(material, 'metalness', 0, 1)
 gui.add(material, 'roughness', 0, 1)
 
-const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), material)
-const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material)
+const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 64, 64), material)
+const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1, 64, 64), material)
+
 const torus = new THREE.Mesh(
-  new THREE.TorusGeometry(0.3, 0.2, 16, 16),
+  new THREE.TorusGeometry(0.3, 0.2, 64, 64),
   material
+)
+
+plane.geometry.setAttribute(
+  'uv2',
+  new THREE.BufferAttribute(plane.geometry.attributes.uv.array, 2)
+)
+sphere.geometry.setAttribute(
+  'uv2',
+  new THREE.BufferAttribute(sphere.geometry.attributes.uv.array, 2)
+)
+torus.geometry.setAttribute(
+  'uv2',
+  new THREE.BufferAttribute(torus.geometry.attributes.uv.array, 2)
 )
 
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
@@ -192,13 +220,13 @@ const tick = () => {
   const elapsedTime = clock.getElapsedTime()
 
   // Update objects
-  sphere.rotation.y = 0.1 * clock.elapsedTime
-  plane.rotation.y = 0.1 * clock.elapsedTime
-  torus.rotation.y = 0.1 * clock.elapsedTime
+  // sphere.rotation.y = 0.1 * clock.elapsedTime;
+  // plane.rotation.y = 0.1 * clock.elapsedTime;
+  // torus.rotation.y = 0.1 * clock.elapsedTime;
 
-  sphere.rotation.x = 0.15 * clock.elapsedTime
-  plane.rotation.x = 0.15 * clock.elapsedTime
-  torus.rotation.x = 0.15 * clock.elapsedTime
+  // sphere.rotation.x = 0.15 * clock.elapsedTime;
+  // plane.rotation.x = 0.15 * clock.elapsedTime;
+  // torus.rotation.x = 0.15 * clock.elapsedTime;
 
   // Update controls
   controls.update()
