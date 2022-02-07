@@ -3,6 +3,9 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import './style.css'
 
+const textureLoader = new THREE.TextureLoader()
+const bakedShadow = textureLoader.load('/textures/bakedShadow.jpg')
+
 /**
  * Base
  */
@@ -79,13 +82,19 @@ scene.add(pointLight)
 
 const pointLightHelper = new THREE.CameraHelper(pointLight.shadow.camera)
 scene.add(pointLightHelper)
+pointLightHelper.visible = false
 /**
  * Objects
  */
 const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), material)
 sphere.castShadow = true
 
-const plane = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), material)
+const plane = new THREE.Mesh(
+  new THREE.PlaneGeometry(5, 5),
+  new THREE.MeshBasicMaterial({
+    map: bakedShadow,
+  })
+)
 plane.rotation.x = -Math.PI * 0.5
 plane.position.y = -0.5
 plane.receiveShadow = true
@@ -141,7 +150,7 @@ const renderer = new THREE.WebGLRenderer({
 })
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-renderer.shadowMap.enabled = true
+renderer.shadowMap.enabled = false
 
 /**
  * Animate
