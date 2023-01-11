@@ -1,7 +1,7 @@
-import './style.css'
+import * as dat from 'lil-gui'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import * as dat from 'lil-gui'
+import './style.css'
 
 /**
  * Base
@@ -37,6 +37,24 @@ object3.position.x = 2
 
 scene.add(object1, object2, object3)
 
+/* 
+    Raycaster
+*/
+
+const raycaster = new THREE.Raycaster()
+
+// const rayOrigin = new THREE.Vector3(-3, 0, 0)
+// const rayDirection = new THREE.Vector3(1, 0, 0).normalize()
+// raycaster.set(rayOrigin, rayDirection)
+
+// const instersect = raycaster.intersectObject(object2)
+// console.log(instersect);
+
+// const instersects = raycaster.intersectObjects([object1, object2, object3]);
+
+// console.log(instersects);
+
+
 /**
  * Sizes
  */
@@ -58,6 +76,14 @@ window.addEventListener('resize', () =>
     // Update renderer
     renderer.setSize(sizes.width, sizes.height)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+})
+
+/* Mouse */
+const mouse = new THREE.Vector2()
+
+window.addEventListener('mousemove', (e) => {
+    mouse.x = 2 * e.clientX / sizes.width - 1
+    mouse.y = - 2 * e.clientY / sizes.height + 1
 })
 
 /**
@@ -86,9 +112,52 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
  */
 const clock = new THREE.Clock()
 
+let witness = null
+
+const resetWitness = () => {
+            if(witness) witness.material.color.set('#ff0000')
+
+}
+
 const tick = () =>
 {
     const elapsedTime = clock.getElapsedTime()
+
+    object1.position.y = Math.sin(elapsedTime * 2)
+    object2.position.y = Math.sin(Math.PI / 2 + elapsedTime * 2) 
+    object3.position.y = Math.sin(3 * Math.PI / 4 + elapsedTime * 2)
+
+    // const rayOrigin = new THREE.Vector3(-3, 0, 0)
+    // const rayDirection = new THREE.Vector3(1, 0, 0).normalize()
+
+    // raycaster.set(rayOrigin, rayDirection)
+    raycaster.setFromCamera(mouse, camera)
+
+    const objects = [object1, object2, object3]
+
+    const intersections = raycaster.intersectObjects(objects)
+
+    // objects.forEach(obj => {
+    //     const intersected = intersections.find(i => i.object === obj)
+
+    //     obj.material.color.set(`#ff00${intersected ? '88' : '00'}`)
+    // })
+
+
+    if(intersections.length){
+        const target = intersections[0].object
+
+        if(target && target !== witness) {
+            resetWitness()
+            target.material.color.set('#ff0099')
+
+            witness = target
+        }
+    }else{
+        resetWitness()
+
+        witness = null
+    }
 
     // Update controls
     controls.update()
