@@ -1,6 +1,8 @@
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import * as dat from 'lil-gui'
+import * as THREE from 'three'
+import { AnimationMixer } from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 
 /**
  * Base
@@ -13,6 +15,57 @@ const canvas = document.querySelector('canvas.webgl')
 
 // Scene
 const scene = new THREE.Scene()
+
+// Model Loader
+const gltfLoader = new GLTFLoader()
+
+let mixer = null
+let current = null
+
+/***
+ * Models
+ */
+console.log(gltfLoader)
+gltfLoader.load(
+    '/models/Fox/glTF/Fox.gltf',
+    (gltf) => {
+        mixer = new AnimationMixer(gltf.scene)
+        const anims = gltf.animations
+        const clips = {}
+        clips.survey = mixer.clipAction(anims[0])
+        clips.walk = mixer.clipAction(anims[1])
+        clips.run = mixer.clipAction(anims[2])
+
+        const pause = () => {
+            Object.keys(clips).filter(clipName => clipName !== current).forEach(clipName => {
+                clips[clipName].stop()
+            })
+        }
+
+        const runAnim = (name) => {
+            current = name
+            clips[current].play()
+            setTimeout(pause, 300)
+        }
+
+        const actions = {
+            survey: () => runAnim('survey'),
+            walk: () => runAnim('walk'),
+            run: () => runAnim('run'),
+        }
+
+        for (const action in actions) {
+            gui.add(actions, action)
+        }
+
+        const scale = 0.025
+        gltf.scene.scale.set(scale, scale, scale)
+        scene.add(gltf.scene)
+
+
+    }
+)
+
 
 /**
  * Floor
@@ -54,8 +107,7 @@ const sizes = {
     height: window.innerHeight
 }
 
-window.addEventListener('resize', () =>
-{
+window.addEventListener('resize', () => {
     // Update sizes
     sizes.width = window.innerWidth
     sizes.height = window.innerHeight
@@ -99,11 +151,12 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 const clock = new THREE.Clock()
 let previousTime = 0
 
-const tick = () =>
-{
+const tick = () => {
     const elapsedTime = clock.getElapsedTime()
     const deltaTime = elapsedTime - previousTime
     previousTime = elapsedTime
+
+    mixer?.update(deltaTime)
 
     // Update controls
     controls.update()
