@@ -1,12 +1,18 @@
+import * as dat from 'lil-gui'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import * as dat from 'lil-gui'
+import { material } from './shader'
 
 /**
  * Base
  */
 // Debug
 const gui = new dat.GUI()
+
+gui.add(material.uniforms.uFrequency.value, 'x').name('Frecuency X').min(0).max(10)
+gui.add(material.uniforms.uFrequency.value, 'y').name('Frecuency Y').min(0).max(10)
+gui.add(material.uniforms.uAmplitude, 'value').name('Amplitude').min(0).max(0.1).step(0.01)
+
 
 // Canvas
 const canvas = document.querySelector('canvas.webgl')
@@ -17,7 +23,6 @@ const scene = new THREE.Scene()
 /**
  * Textures
  */
-const textureLoader = new THREE.TextureLoader()
 
 /**
  * Test mesh
@@ -25,12 +30,22 @@ const textureLoader = new THREE.TextureLoader()
 // Geometry
 const geometry = new THREE.PlaneGeometry(1, 1, 32, 32)
 
+const count = geometry.attributes.position.count
+const randoms = new Float32Array(count)
+
+for (let i = 0; i < count; i++) {
+    randoms[i] = Math.random()  
+}
+
+geometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1 ))
+
 // Material
-const material = new THREE.MeshBasicMaterial()
 
 // Mesh
 const mesh = new THREE.Mesh(geometry, material)
 scene.add(mesh)
+
+mesh.scale.y = 2/3
 
 /**
  * Sizes
@@ -84,6 +99,7 @@ const clock = new THREE.Clock()
 const tick = () =>
 {
     const elapsedTime = clock.getElapsedTime()
+    material.uniforms.uTime.value = elapsedTime
 
     // Update controls
     controls.update()
