@@ -1,11 +1,11 @@
-import { Color, RawShaderMaterial, TextureLoader, Vector2 } from "three"
+import { Color, ShaderMaterial, TextureLoader, Vector2 } from "three"
 import fragmentShader from './shaders/test/fragment.fs'
 import vertexShader from './shaders/test/vertex.vs'
 
 const textureLoader = new TextureLoader()
 const texture = textureLoader.load('/textures/flag-french.jpg')
 
-export const material = new RawShaderMaterial({
+export const material = new ShaderMaterial({
   vertexShader,
   fragmentShader,
   uniforms: {
