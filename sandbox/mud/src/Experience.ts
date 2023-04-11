@@ -1,6 +1,8 @@
-import { AmbientLight, BackSide, BoxGeometry, Camera, Mesh, MeshStandardMaterial, PerspectiveCamera, Scene, SpotLight, WebGLRenderer } from 'three';
+import { AmbientLight, BackSide, BoxGeometry, BufferAttribute, BufferGeometry, Camera, Mesh, MeshStandardMaterial, PerspectiveCamera, Scene, SpotLight, WebGLRenderer } from 'three';
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { ModelLoader } from './ModelLoader';
+import { carShaderMaterial } from './Shaders/CarShader';
 
 export class Experience {
   canvas: HTMLCanvasElement
@@ -16,6 +18,8 @@ export class Experience {
   moveSpeed = 0.05
 
   cube: Mesh
+  loader: ModelLoader
+  carGeometry?: BufferGeometry
 
   constructor() {
     this.canvas = document.querySelector('canvas#webgl') as HTMLCanvasElement
@@ -31,7 +35,9 @@ export class Experience {
     this.cameraControls = new OrbitControls(this.camera, this.renderer.domElement);
 
     this.renderer.setSize(this.sizes.width, this.sizes.height)
-    this.renderer.physicallyCorrectLights = true;
+    // @ts-ignore
+    this.renderer.useLegacyLights = true;
+    this.loader = new ModelLoader();
 
     const geometry = new BoxGeometry(1, 1, 1)
     const material = new MeshStandardMaterial({ color: 0xAA9999 })
@@ -46,7 +52,6 @@ export class Experience {
 
     this.camera.position.z = 3
 
-    this.scene.add(this.cube)
 
     const light = new SpotLight(0xffffff, 50)
     const ambient = new AmbientLight(0x999999)
@@ -58,27 +63,55 @@ export class Experience {
     this.scene.add(light)
     this.scene.add(ambient)
 
+    this.loader.loadModel('/models/three-car.glb').then((gltf) => {
+      gltf.scene.scale.set(0.4, 0.4, 0.4);
+      // cast child to Mesh
+      (gltf.scene.children as Mesh[]).forEach((child) => {
+        child.material = carShaderMaterial;
+
+        // @ts-ignore
+        const [maxZ, minZ] = Experience.getZBoundaries(child.geometry);
+
+        const redness = new Float32Array(child.geometry.attributes.position.count)
+          const position = child.geometry.attributes.position as BufferAttribute;
+
+        redness.forEach((_, i) => {
+          const z = position.array[(i * 3) + 2];
+
+          const value = (z - minZ) / (maxZ - minZ);
+
+          redness[i] = value;
+        })
+
+        child.geometry.setAttribute('redness', new BufferAttribute(redness, 1))
+      });
+
+      this.carGeometry = (gltf.scene.children[0] as any).geometry as BufferGeometry
+      
+      this.scene.add(gltf.scene);
+    })
+
     this.render()
   }
 
-  rotateCamera(degrees: number) {
-    const radians = (degrees / 180) * Math.PI
+  static getZBoundaries(geometry: BufferGeometry): [number, number] {
+    const count = geometry.attributes.position.count;
+    const position = geometry.attributes.position as BufferAttribute;
+    let maxZ = 0;
+    let minZ = 0;
 
-    this.camera.rotateY(radians)
+    for (let i = 0; i < count; i++) {
+      const z = position.array[(i * 3) + 2];
+
+      if (maxZ < z) {
+        maxZ = z
+      } else if (minZ > z) {
+        minZ = z
+      }
+    }
+    
+    return [maxZ, minZ];
   }
-
-  moveCameraForward(meters: number) {
-    this.camera.translateZ(meters)
-  }
-
-  strafeCamera(meters: number) {
-    this.camera.translateX(meters)
-  }
-
-  focusCamera() {
-    this.camera.lookAt(this.cube.position)
-  }
-
 
   render() {
     this.cameraControls.update();
