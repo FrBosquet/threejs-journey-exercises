@@ -1,8 +1,9 @@
-import { AmbientLight, BackSide, BoxGeometry, BufferAttribute, BufferGeometry, Camera, Mesh, MeshStandardMaterial, PerspectiveCamera, Scene, SpotLight, WebGLRenderer } from 'three';
+import { AmbientLight, BackSide, Box3, BoxGeometry, BufferAttribute, BufferGeometry, Camera, Mesh, MeshStandardMaterial, PerspectiveCamera, Scene, SpotLight, WebGLRenderer } from 'three';
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { ModelLoader } from './ModelLoader';
 import { carShaderMaterial } from './Shaders/CarShader';
+import { addBoundingBox } from './utils';
 
 export class Experience {
   canvas: HTMLCanvasElement
@@ -69,11 +70,16 @@ export class Experience {
       (gltf.scene.children as Mesh[]).forEach((child) => {
         child.material = carShaderMaterial;
 
+        // create a box3 from child
+        const box = new Box3().setFromObject(child);
+        
+        addBoundingBox(child, box);
+
         // @ts-ignore
         const [maxZ, minZ] = Experience.getZBoundaries(child.geometry);
 
         const redness = new Float32Array(child.geometry.attributes.position.count)
-          const position = child.geometry.attributes.position as BufferAttribute;
+        const position = child.geometry.attributes.position as BufferAttribute;
 
         redness.forEach((_, i) => {
           const z = position.array[(i * 3) + 2];
