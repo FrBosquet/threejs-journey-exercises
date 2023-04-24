@@ -1,9 +1,10 @@
-import { AmbientLight, BackSide, Box3, BoxGeometry, BufferAttribute, BufferGeometry, Camera, Mesh, MeshStandardMaterial, PerspectiveCamera, Scene, SpotLight, WebGLRenderer } from 'three';
+import { AmbientLight, BackSide, Box3, BoxGeometry, BufferAttribute, BufferGeometry, Camera, Mesh, MeshStandardMaterial, PerspectiveCamera, Points, PointsMaterial, Scene, SpotLight, WebGLRenderer } from 'three';
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { ModelLoader } from './ModelLoader';
 import { carShaderMaterial } from './Shaders/CarShader';
-import { addBoundingBox } from './utils';
+import { addBoundingBox, getBoundingBoxPoints } from './utils';
 
 export class Experience {
   canvas: HTMLCanvasElement
@@ -22,6 +23,8 @@ export class Experience {
   loader: ModelLoader
   carGeometry?: BufferGeometry
 
+  transformControls?: TransformControls
+
   constructor() {
     this.canvas = document.querySelector('canvas#webgl') as HTMLCanvasElement
     this.scene = new Scene()
@@ -34,6 +37,13 @@ export class Experience {
       antialias: true
     })
     this.cameraControls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.transformControls = new TransformControls(this.camera, this.renderer.domElement);
+    this.transformControls.size = 0.5;
+    this.scene.add(this.transformControls);
+
+    this.transformControls.addEventListener('dragging-changed', (event) => {
+      this.cameraControls.enabled = !event.value;
+    });
 
     this.renderer.setSize(this.sizes.width, this.sizes.height)
     // @ts-ignore
@@ -52,7 +62,6 @@ export class Experience {
 
 
     this.camera.position.z = 3
-
 
     const light = new SpotLight(0xffffff, 50)
     const ambient = new AmbientLight(0x999999)
@@ -74,6 +83,16 @@ export class Experience {
         const box = new Box3().setFromObject(child);
         
         addBoundingBox(child, box);
+
+        const bbPoints = getBoundingBoxPoints(box);
+        const pointMaterial = new PointsMaterial({ color: 0x00ff00, size: 0.05 });
+        Object.values(bbPoints).forEach((vector) => {
+          const pointGeometry = new BufferGeometry().setFromPoints([vector]);
+          const point = new Points(pointGeometry, pointMaterial);
+          child.add(point);
+          this.transformControls?.position.set(vector.x * 0.4, vector.y * 0.4, vector.z * 0.4);
+          this.transformControls?.attach(point);
+        });
 
         // @ts-ignore
         const [maxZ, minZ] = Experience.getZBoundaries(child.geometry);
