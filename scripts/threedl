@@ -1,0 +1,71 @@
+#!/bin/bash
+
+echo ""
+echo -e "\e[32mThree.js\e[0m lesson file downloader"
+echo ""
+
+first_param=$1
+
+if [ -z "$first_param" ]; then
+  echo -e "\e[31mError:\e[0m No URL provided."
+  exit 1
+fi
+
+if [[ "$first_param" != *.zip ]]; then
+  echo -e "\e[31mError:\e[0m The URL does not point to a .zip file."
+  exit 1
+fi
+
+echo -e "\e[30mDownload url:\e[0m $first_param"
+
+file_name=$(basename "$first_param")
+dir_name="${file_name%.zip}"
+
+echo -e "\e[30mFilename:\e[0m $file_name"
+echo -e "\e[30mDirectory:\e[0m $dir_name"
+
+if [ -e "$file_name" ]; then
+  echo -e "\e[31mError:\e[0m File '$file_name' already exists."
+  exit 1
+fi
+
+if [ -d "$dir_name" ]; then
+  echo -e "\e[31mError:\e[0m Directory '$dir_name' already exists."
+  exit 1
+fi
+
+curl -o "$file_name" "$first_param"
+
+if [ $? -ne 0 ]; then
+  echo -e "\e[31mError:\e[0m Download failed. Check the provided URL."
+  exit 1
+fi
+
+echo -e "\e[32mDownload complete.\e[0m"
+
+# Check if unzip command is available
+if ! command -v unzip &> /dev/null; then
+  echo -e "\e[31mError:\e[0m unzip command not found. Please install unzip and try again."
+  exit 1
+fi
+
+echo -e "\e[30mUnzipping to directory '$dir_name'...\e[0m"
+mkdir -p "$dir_name"
+unzip -q "$file_name" -d "$dir_name"
+
+if [ $? -ne 0 ]; then
+  echo -e "\e[31mError:\e[0m Unzipping failed."
+  exit 1
+fi
+
+echo -e "\e[32mUnzipping complete.\e[0m"
+rm "$file_name"
+
+cd "$dir_name" || exit 1
+
+echo -e "\e[30mInstalling dependencies...\e[0m"
+pnpm i
+
+echo ""
+echo -e "\e[32mSetup complete. Happy learning!\e[0m"
+echo ""
