@@ -7,6 +7,25 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
  * Debug
  */
 const gui = new GUI()
+const debugObject = {
+    createSphere: () => {
+        createSphere(Math.max(Math.random() * 0.5, 0.2), {
+            x: (Math.random() - 0.5) * 3,
+            y: 3,
+            z: (Math.random() - 0.5) * 3
+        })
+    },
+    createBox: () => {
+        createBox(Math.max(Math.random() * 0.5, 0.2), {
+            x: (Math.random() - 0.5) * 3,
+            y: 3,
+            z: (Math.random() - 0.5) * 3
+        })
+    }
+}
+
+gui.add(debugObject, 'createSphere')
+gui.add(debugObject, 'createBox')
 
 /**
  * Base
@@ -16,6 +35,17 @@ const canvas = document.querySelector('canvas.webgl')
 
 // Scene
 const scene = new THREE.Scene()
+
+/**
+ * Sounds
+ */
+const hitSound = new Audio('/sounds/hit.mp3')
+
+const playHitSound = () => {
+    hitSound.currentTime = 0
+    hitSound.volume = 0.6 + 0.4 * Math.random()
+    hitSound.play()
+}
 
 /**
  * Textures
@@ -38,40 +68,102 @@ const environmentMapTexture = cubeTextureLoader.load([
 
 const world = new CANNON.World()
 world.gravity.set(0, -9.82, 0)
+world.allowSleep = true
+world.broadphase = new CANNON.SAPBroadphase(world)
 
-const sphereShape = new CANNON.Sphere(0.5)
-const sphereBody = new CANNON.Body({
-    mass: 1,
-    position: new CANNON.Vec3(0, 3, 0),
-    shape: sphereShape
+const defaultMaterial = new CANNON.Material('default')
+const contactMaterial = new CANNON.ContactMaterial(
+    defaultMaterial,
+    defaultMaterial,
+    {
+        friction: 0.1,
+        restitution: 0.7
+    })
+
+const objectsToUpdate = []
+
+const sphereGeometry = new THREE.SphereGeometry(1, 32, 32)
+const metalMaterial = new THREE.MeshStandardMaterial({
+    metalness: 0.3,
+    roughness: 0.4,
+    envMap: environmentMapTexture,
+    envMapIntensity: 0.5
 })
 
-world.addBody(sphereBody)
+const createSphere = (radius, position) => { // TODO: Continue in 1:02:21
+    // Mesh
+    const mesh = new THREE.Mesh(
+        sphereGeometry,
+        metalMaterial
+    )
+
+    mesh.scale.set(radius, radius, radius)
+
+    mesh.castShadow = true
+    mesh.position.copy(position)
+
+    scene.add(mesh)
+
+    // body
+    const shape = new CANNON.Sphere(radius)
+    const body = new CANNON.Body({
+        mass: 1,
+        position,
+        shape,
+        material: defaultMaterial
+    })
+    body.addEventListener('collide', collision => {
+        if (collision.contact.getImpactVelocityAlongNormal() > 1.5) playHitSound()
+    })
+
+    world.addBody(body)
+
+    objectsToUpdate.push({ mesh, body })
+}
+
+const boxGeometry = new THREE.BoxGeometry(1, 1, 1)
+
+const createBox = (size, position) => {
+    const mesh = new THREE.Mesh(
+        boxGeometry,
+        metalMaterial
+    )
+
+    mesh.scale.set(size, size, size)
+    mesh.castShadow = true
+    mesh.position.copy(position)
+
+    scene.add(mesh)
+
+    const shape = new CANNON.Box(new CANNON.Vec3(size / 2, size / 2, size / 2))
+    const body = new CANNON.Body({
+        mass: 1,
+        position,
+        shape,
+        material: defaultMaterial
+    })
+
+    world.addBody(body)
+
+    body.addEventListener('collide', playHitSound)
+
+    objectsToUpdate.push({ mesh, body })
+}
+
+world.addContactMaterial(contactMaterial)
+
+createSphere(0.5, new CANNON.Vec3(0, 3, 0))
+createSphere(0.5, new CANNON.Vec3(0, 5, 0.5))
 
 const floorShape = new CANNON.Plane()
 const floorBody = new CANNON.Body({
-    shape: floorShape
+    shape: floorShape,
+    material: defaultMaterial
 })
 
 floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5)
 
 world.addBody(floorBody)
-
-/**
- * Test sphere
- */
-const sphere = new THREE.Mesh(
-    new THREE.SphereGeometry(0.5, 32, 32),
-    new THREE.MeshStandardMaterial({
-        metalness: 0.3,
-        roughness: 0.4,
-        envMap: environmentMapTexture,
-        envMapIntensity: 0.5
-    })
-)
-sphere.castShadow = true
-sphere.position.y = 0.5
-scene.add(sphere)
 
 /**
  * Floor
@@ -163,13 +255,18 @@ const tick = () => {
     const deltaTime = elapsedTime - oldElapsedTime
     oldElapsedTime = elapsedTime
 
+    objectsToUpdate.forEach(object => {
+        object.mesh.position.copy(object.body.position)
+        object.mesh.quaternion.copy(object.body.quaternion)
+    })
+
     // Update physics world
     world.step(1 / 60, deltaTime, 3)
 
     // Update controls
     controls.update()
 
-    sphere.position.copy(sphereBody.position)
+    // sphere.position.copy(sphereBody.position)
 
     // Render
     renderer.render(scene, camera)
