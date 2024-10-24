@@ -8,9 +8,9 @@ importers:
 
   .:
     dependencies:
-      cannon:
-        specifier: ^0.6.2
-        version: 0.6.2
+      cannon-es:
+        specifier: 0.15.1
+        version: 0.15.1
       lil-gui:
         specifier: ^0.19.2
         version: 0.19.2
@@ -252,8 +252,8 @@ packages:
     resolution: {integrity: sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==}
     engines: {node: '>=8'}
 
-  cannon@0.6.2:
-    resolution: {integrity: sha512-n/7wWSXr8KOSvjad2x0fJHgpMepKjOKi+NdSnjfYyijoDBZnp4JQKgPcpv28jlXoWM+N9zVYU09J0A6Qxx+Y7w==}
+  cannon-es@0.15.1:
+    resolution: {integrity: sha512-NkrU8OkM5K4q7Ljj69nfwC5UmPuoiAga6v98Aus0QHTdgJFwBfPTDXRkc3qpGGOixdUisFzmJo0DpKWIi6N+4g==}
 
   esbuild@0.21.5:
     resolution: {integrity: sha512-mg3OPMV4hXywwpoDxu3Qda5xCKQi+vCTZq8S9J/EpkhB2HzKXq4SNFZE3+NK93JYxc8VMSep+lOUSC/RVKaBqw==}
@@ -473,7 +473,7 @@ snapshots:
     dependencies:
       fill-range: 7.1.1
 
-  cannon@0.6.2: {}
+  cannon-es@0.15.1: {}
 
   esbuild@0.21.5:
     optionalDependencies:

@@ -1,4 +1,4 @@
-import CANNON from 'cannon'
+import * as CANNON from 'cannon-es'
 import GUI from 'lil-gui'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
@@ -21,11 +21,21 @@ const debugObject = {
             y: 3,
             z: (Math.random() - 0.5) * 3
         })
+    },
+    reset: () => {
+        for (const obj of objectsToUpdate) {
+            obj.body.removeEventListener('collide', playHitSound)
+            world.remove(obj.body)
+            scene.remove(obj.mesh)
+        }
+
+        objectsToUpdate.splice(0, objectsToUpdate.length)
     }
 }
 
 gui.add(debugObject, 'createSphere')
 gui.add(debugObject, 'createBox')
+gui.add(debugObject, 'reset')
 
 /**
  * Base
