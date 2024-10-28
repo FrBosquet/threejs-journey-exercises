@@ -1,6 +1,29 @@
+import GUI from 'lil-gui'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import GUI from 'lil-gui'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+
+/**
+ * Loaders
+ */
+const dracoLoader = new DRACOLoader()
+dracoLoader.setDecoderPath('/draco/')
+
+const gltfLoader = new GLTFLoader()
+gltfLoader.setDRACOLoader(dracoLoader)
+
+let mixer
+gltfLoader.load(
+    '/models/Fox/glTF/Fox.gltf',
+    (gltf) => {
+        mixer = new THREE.AnimationMixer(gltf.scene)
+        mixer.clipAction(gltf.animations[2]).play()
+
+        gltf.scene.scale.set(0.02, 0.02, 0.02)
+        scene.add(gltf.scene)
+    },
+)
 
 /**
  * Base
@@ -54,8 +77,7 @@ const sizes = {
     height: window.innerHeight
 }
 
-window.addEventListener('resize', () =>
-{
+window.addEventListener('resize', () => {
     // Update sizes
     sizes.width = window.innerWidth
     sizes.height = window.innerHeight
@@ -99,12 +121,12 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 const clock = new THREE.Clock()
 let previousTime = 0
 
-const tick = () =>
-{
+const tick = () => {
     const elapsedTime = clock.getElapsedTime()
     const deltaTime = elapsedTime - previousTime
     previousTime = elapsedTime
 
+    mixer?.update(deltaTime)
     // Update controls
     controls.update()
 
