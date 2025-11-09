@@ -1,6 +1,17 @@
+import GUI from 'lil-gui'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import GUI from 'lil-gui'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+
+let duck
+const gltfLoader = new GLTFLoader()
+gltfLoader.load(
+    '/models/Duck/glTF-Binary/Duck.glb',
+    (gltf) => {
+        duck = gltf.scene
+        scene.add(gltf.scene)
+    },
+)
 
 /**
  * Base
@@ -36,6 +47,18 @@ object3.position.x = 2
 
 scene.add(object1, object2, object3)
 
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.1)
+scene.add(ambientLight)
+
+const light = new THREE.DirectionalLight(0xffffff, 2)
+light.position.set(2, 2, 2)
+scene.add(light)
+
+/**
+ * Raycaster
+ */
+const raycaster = new THREE.Raycaster()
+
 /**
  * Sizes
  */
@@ -44,8 +67,7 @@ const sizes = {
     height: window.innerHeight
 }
 
-window.addEventListener('resize', () =>
-{
+window.addEventListener('resize', () => {
     // Update sizes
     sizes.width = window.innerWidth
     sizes.height = window.innerHeight
@@ -85,9 +107,50 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
  */
 const clock = new THREE.Clock()
 
-const tick = () =>
-{
+/**
+ * Mouse
+ */
+
+const mouse = new THREE.Vector2()
+
+window.addEventListener('mousemove', (event) => {
+    mouse.x = (event.clientX / sizes.width) * 2 - 1
+    mouse.y = -(event.clientY / sizes.height) * 2 + 1
+})
+
+const tick = () => {
     const elapsedTime = clock.getElapsedTime()
+
+    // Animate objects
+    object1.position.y = 2 * Math.sin(elapsedTime * 2)
+    object2.position.y = 2 * Math.sin(elapsedTime * 2 + 0.5)
+    object3.position.y = 2 * Math.sin(elapsedTime * 2 + 0.25)
+
+    // Raycaster
+    raycaster.setFromCamera(mouse, camera)
+    const hits = raycaster.intersectObjects([object1, object2, object3])
+
+    object1.material.color.set('#ff0000')
+    object2.material.color.set('#ff0000')
+    object3.material.color.set('#ff0000')
+    canvas.style.cursor = 'auto'
+
+    hits.forEach(hit => {
+        hit.object.material.color.set('#0000ff')
+        canvas.style.cursor = 'pointer'
+    })
+
+    if (duck) {
+        const modelIntersect = raycaster.intersectObject(duck)
+
+        if (modelIntersect.length) {
+            console.log('duck')
+            duck.rotation.y = Math.PI
+        } else {
+            duck.rotation.y = 0
+            console.log('duck not intersected')
+        }
+    }
 
     // Update controls
     controls.update()

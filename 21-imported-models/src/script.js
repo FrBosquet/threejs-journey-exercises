@@ -15,7 +15,7 @@ gltfLoader.setDRACOLoader(dracoLoader)
 
 let mixer
 gltfLoader.load(
-    '/models/Fox/glTF/Fox.gltf',
+    '/models/Fox/glTF-binary/Fox.gltf',
     (gltf) => {
         mixer = new THREE.AnimationMixer(gltf.scene)
         mixer.clipAction(gltf.animations[2]).play()
