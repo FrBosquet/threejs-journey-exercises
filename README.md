@@ -7,3 +7,8 @@ Use the script `threedl` and paste the link
 
 Copy `scripts/threedl` to `/usr/local/bin`
 Give permissions with `chmod +x /usr/local/bin/threedl`
+
+```
+sudo cp scripts/threedl /usr/local/bin && sudo chmod +x /usr/local/bin/threedl
+```
+
